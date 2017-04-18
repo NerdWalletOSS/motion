@@ -1,17 +1,27 @@
 import functools
 import logging
+import multiprocessing
+import sys
 
 from kinesis.consumer import KinesisConsumer
 from kinesis.producer import KinesisProducer
 
-from motion.marshal import JSONMarshal, MarshalFailure
-from motion.workers import MotionWorker
+from .marshal import JSONMarshal, MarshalFailure
+from .worker import MotionWorker
 
 log = logging.getLogger(__name__)
 
 
 class Motion(object):
-    def __init__(self, stream_name, marshal=None):
+    _INSTANCES = []
+
+    def __new__(cls, *args, **kwargs):
+        inst = super(Motion, cls).__new__(cls, *args, **kwargs)
+        Motion._INSTANCES.append(inst)
+        return inst
+
+    def __init__(self, stream_name, marshal=None, name=None):
+        self.name = name or "Default Motion Instance"
         self.stream_name = stream_name
         self.producer = KinesisProducer(stream_name)
         self.consumer = KinesisConsumer(stream_name)
@@ -19,6 +29,12 @@ class Motion(object):
         self.responder_queue = multiprocessing.Queue()
         self.responders = {}
         self.workers = {}
+
+    def __str__(self):
+        return unicode(self).encode('utf-8')
+
+    def __unicode__(self):
+        return '{0} on {1}'.format(self.name, self.stream_name)
 
     def respond_to(self, event_name):
         def decorator(func):
@@ -60,3 +76,16 @@ class Motion(object):
         for idx in xrange(concurrency):
             self.workers[idx] = MotionWorker(self.responder_queue, self.responders)
             self.workers[idx].start()
+
+    def check_workers(self):
+        for idx in self.workers:
+            worker = self.workers[idx]
+            if not worker.process.is_alive():
+                log.error("Worker %d is no longer alive!  Restarting...", idx)
+                worker.shutdown()
+                worker.start()
+
+    def shutdown_workers(self):
+        for idx in self.workers:
+            worker = self.workers[idx]
+            worker.shutdown()

@@ -1,2 +1,2 @@
-from motion.motion import Motion
-from motion.worker import MotionWorker
+from .motion import Motion
+from .worker import MotionWorker

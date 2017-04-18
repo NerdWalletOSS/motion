@@ -1,4 +1,6 @@
+import atexit
 import logging
+import Queue
 import multiprocessing
 import signal
 
@@ -12,15 +14,35 @@ class MotionWorker(object):
         self.process = None
         self.alive = True
 
+        atexit.register(self.shutdown)
+
     def start(self):
-        assert self.process is None, "Already started"
-        self.process = multiprocessing.Process(target=self.run)
-        self.process.start()
+        if self.process is None:
+            self.process = multiprocessing.Process(target=self.run)
+            self.process.start()
+
+    def shutdown(self):
+        if self.process:
+            log.info("Worker shutting down")
+            self.process.terminate()
+            self.process.join()
+            self.process = None
+
+    def signal_handler(self, signum, frame):
+        log.info("Caught signal %s", signum)
+        self.alive = False
 
     def run(self):
+        signal.signal(signal.SIGTERM, self.signal_handler)
+        signal.signal(signal.SIGINT, self.signal_handler)
+
+        log.info("Worker starting")
+
         while self.alive:
             try:
-                event_name, payload = self.queue.get()
+                event_name, payload = self.queue.get(block=True, timeout=0.5)
+            except Queue.Empty:
+                continue
             except Exception:
                 log.exception("Failed to get event & payload from queue")
                 continue
