@@ -40,7 +40,7 @@ class MotionWorker(object):
 
         while self.alive:
             try:
-                event_name, payload = self.queue.get(block=True, timeout=0.5)
+                event_name, payload = self.queue.get(block=True, timeout=0.1)
             except Queue.Empty:
                 continue
             except Exception:
