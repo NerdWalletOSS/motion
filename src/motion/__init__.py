@@ -1,2 +1,2 @@
-from .motion import Motion
-from .worker import MotionWorker
+from .motion import Motion   # noqa
+from .worker import MotionWorker  # noqa

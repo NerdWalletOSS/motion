@@ -1,9 +1,6 @@
-import atexit
 import functools
 import logging
 import multiprocessing
-import sys
-import time
 
 import boto3
 

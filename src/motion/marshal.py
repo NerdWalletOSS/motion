@@ -8,7 +8,7 @@ class MarshalFailure(Exception):
     """Failed to marshal a message to bytes or native"""
     def __init__(self, error, payload):
         super(MarshalFailure, self).__init__(error)
-        self.payload = payload 
+        self.payload = payload
 
 
 class JSONMarshal(object):

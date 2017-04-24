@@ -1,7 +1,6 @@
 import importlib
 import logging
 import os
-import signal
 import sys
 import time
 
@@ -29,7 +28,7 @@ def main(imports, debug):
         logging.getLogger('botocore.vendored.requests.packages.urllib3').level = logging.WARN
 
     logging.basicConfig(level=log_level, format=log_format)
-    
+
     # before we import we put the cwd into the path so that we can do relative imports
     sys.path.insert(0, os.getcwd())
 
