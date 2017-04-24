@@ -15,11 +15,8 @@ class MotionWorker(object):
         self.alive = True
 
         atexit.register(self.shutdown)
-
-    def start(self):
-        if self.process is None:
-            self.process = multiprocessing.Process(target=self.run)
-            self.process.start()
+        self.process = multiprocessing.Process(target=self.run)
+        self.process.start()
 
     def shutdown(self):
         if self.process:
@@ -34,7 +31,6 @@ class MotionWorker(object):
 
     def run(self):
         signal.signal(signal.SIGTERM, self.signal_handler)
-        signal.signal(signal.SIGINT, self.signal_handler)
 
         log.info("Worker starting")
 
@@ -43,6 +39,10 @@ class MotionWorker(object):
                 event_name, payload = self.queue.get(block=True, timeout=0.1)
             except Queue.Empty:
                 continue
+            except (SystemExit, KeyboardInterrupt):
+                log.error("Exiting via interrupt")
+                self.alive = False
+                break
             except Exception:
                 log.exception("Failed to get event & payload from queue")
                 continue

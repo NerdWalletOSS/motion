@@ -1,7 +1,11 @@
+import atexit
 import functools
 import logging
 import multiprocessing
 import sys
+import time
+
+import boto3
 
 from kinesis.consumer import KinesisConsumer
 from kinesis.producer import KinesisProducer
@@ -20,12 +24,24 @@ class Motion(object):
         Motion._INSTANCES.append(inst)
         return inst
 
-    def __init__(self, stream_name, marshal=None, name=None):
-        self.name = name or "Default Motion Instance"
+    def __init__(self, stream_name, marshal=None, concurrency=None, boto3_session=None):
+        """Create a new motion application
+
+        :param stream_name: the name of the kinesis stream to use
+        :param marshal: a marshal object to use on messages
+        :param concurrency: an integer specifying the number of workers to start, defaults to 1
+        :param boto3_session: the boto3 Session object to use for our client, can also be a dict that will be passed to
+                              the boto3 Session object as kwargs
+        """
+        if isinstance(boto3_session, dict):
+            boto3_session = boto3.Session(**boto3_session)
+        self.boto3_session = boto3_session
+
         self.stream_name = stream_name
-        self.producer = KinesisProducer(stream_name)
-        self.consumer = KinesisConsumer(stream_name)
+        self.producer = KinesisProducer(stream_name, boto3_session=boto3_session)
+        self.consumer = KinesisConsumer(stream_name, boto3_session=boto3_session)
         self.marshal = marshal or JSONMarshal()
+        self.concurrency = concurrency or 1
         self.responder_queue = multiprocessing.Queue()
         self.responders = {}
         self.workers = {}
@@ -34,7 +50,7 @@ class Motion(object):
         return unicode(self).encode('utf-8')
 
     def __unicode__(self):
-        return '{0} on {1}'.format(self.name, self.stream_name)
+        return 'Motion on {0}'.format(self.stream_name)
 
     def respond_to(self, event_name):
         def decorator(func):
@@ -72,20 +88,20 @@ class Motion(object):
     def dispatch(self, event_name, payload):
         self.producer.put(self.marshal.to_bytes(event_name, payload))
 
-    def start_workers(self, concurrency):
-        for idx in xrange(concurrency):
-            self.workers[idx] = MotionWorker(self.responder_queue, self.responders)
-            self.workers[idx].start()
-
     def check_workers(self):
-        for idx in self.workers:
-            worker = self.workers[idx]
-            if not worker.process.is_alive():
-                log.error("Worker %d is no longer alive!  Restarting...", idx)
-                worker.shutdown()
-                worker.start()
+        log.debug("Checking %s workers", self)
+        for idx in xrange(self.concurrency):
+            # for humans, we make our index 1 based
+            idx += 1
 
-    def shutdown_workers(self):
-        for idx in self.workers:
-            worker = self.workers[idx]
-            worker.shutdown()
+            try:
+                worker = self.workers[idx]
+            except KeyError:
+                log.info("Starting %s worker %d", self, idx)
+                worker = MotionWorker(self.responder_queue, self.responders)
+                self.workers[idx] = worker
+
+            if not worker.process.is_alive():
+                log.error("%s worker %d is no longer alive!", self, idx)
+                worker.shutdown()
+                del self.workers[idx]

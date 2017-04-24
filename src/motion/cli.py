@@ -46,33 +46,14 @@ def main(imports, debug):
         log.critical("No Motion instances found in imports")
         sys.exit(1)
 
-    seen_names = []
-    for motion in Motion._INSTANCES:
-        if motion.name in seen_names:
-            log.critical("Multiple Motion instances with the name '%s' detected.  "
-                            "You must explicitly name multiple instances", inst.name)
-            sys.exit(1)
-        seen_names.append(motion.name)
-
 
 @main.command()
-@click.option('-c', '--concurrency', default=1)
-def worker(concurrency):
-    """Run Motion workers
-    """
-    def signal_handler(signum, frame):
-        for motion in Motion._INSTANCES:
-            motion.shutdown_workers()
-        sys.exit(0)
-
-    signal.signal(signal.SIGTERM, signal_handler)
-    signal.signal(signal.SIGINT, signal_handler)
-
-    for motion in Motion._INSTANCES:
-        log.info("Starting Motion workers for instance: %s", motion)
-        motion.start_workers(concurrency)
-
-    while True:
-        time.sleep(1)
-        for motion in Motion._INSTANCES:
-            motion.check_workers()
+def worker():
+    """Run Motion workers"""
+    try:
+        while True:
+            for motion in Motion._INSTANCES:
+                motion.check_workers()
+            time.sleep(1)
+    except KeyboardInterrupt:
+        pass
