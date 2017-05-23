@@ -8,7 +8,7 @@ from kinesis.consumer import KinesisConsumer
 from kinesis.producer import KinesisProducer
 
 from .marshal import JSONMarshal, MarshalFailure
-from .worker import MotionWorker
+from .worker import MotionConsumer, MotionWorker
 
 log = logging.getLogger(__name__)
 
@@ -86,19 +86,28 @@ class Motion(object):
         self.producer.put(self.marshal.to_bytes(event_name, payload))
 
     def check_workers(self):
-        log.debug("Checking %s workers", self)
-        for idx in xrange(self.concurrency):
-            # for humans, we make our index 1 based
-            idx += 1
-
+        """Check the consumer and task workers for this app, starting them if necessary"""
+        def start_if_not_alive(key, new_worker):
+            """Closure to check a worker, pass a key and lambda that creates the worker if needed"""
             try:
-                worker = self.workers[idx]
+                worker = self.workers[key]
             except KeyError:
-                log.info("Starting %s worker %d", self, idx)
-                worker = MotionWorker(self.responder_queue, self.responders)
-                self.workers[idx] = worker
+                log.info("Starting %s %s", self, key)
+                worker = new_worker()
+                self.workers[key] = worker
 
             if not worker.process.is_alive():
-                log.error("%s worker %d is no longer alive!", self, idx)
+                log.error("%s %s is no longer alive!", self, key)
                 worker.shutdown()
-                del self.workers[idx]
+                del self.workers[key]
+
+        log.debug("Checking %s consumer", self)
+        start_if_not_alive("consumer", lambda: MotionConsumer(self))
+
+        log.debug("Checking %s task workers", self)
+        for idx in xrange(self.concurrency):
+            start_if_not_alive(
+                # for humans, we make our index 1 based
+                'worker %d' % (idx + 1),
+                lambda: MotionWorker(self.responder_queue, self.responders)
+            )
