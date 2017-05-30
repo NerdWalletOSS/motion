@@ -21,7 +21,7 @@ class Motion(object):
         Motion._INSTANCES.append(inst)
         return inst
 
-    def __init__(self, stream_name, marshal=None, concurrency=None, boto3_session=None):
+    def __init__(self, stream_name, marshal=None, concurrency=None, boto3_session=None, kinesis_state=None):
         """Create a new motion application
 
         :param stream_name: the name of the kinesis stream to use
@@ -36,7 +36,7 @@ class Motion(object):
 
         self.stream_name = stream_name
         self.producer = KinesisProducer(stream_name, boto3_session=boto3_session)
-        self.consumer = KinesisConsumer(stream_name, boto3_session=boto3_session)
+        self.consumer = KinesisConsumer(stream_name, boto3_session=boto3_session, state=kinesis_state)
         self.marshal = marshal or JSONMarshal()
         self.concurrency = concurrency or 1
         self.responder_queue = multiprocessing.Queue()
@@ -68,7 +68,7 @@ class Motion(object):
         for message in self.consumer:
             log.debug("Consumed message: %s", message)
             try:
-                event_name, payload = self.marshal.to_native(message)
+                event_name, payload = self.marshal.to_native(message['Data'])
             except MarshalFailure:
                 log.warn("Failed to marshal message to native objects, skipping")
                 continue
@@ -80,7 +80,7 @@ class Motion(object):
                 log.warn("No responder for event %s registered, skipping", event_name)
                 continue
 
-            self.responder_queue.put_nowait((event_name, payload))
+            self.responder_queue.put((event_name, payload))
 
     def dispatch(self, event_name, payload):
         self.producer.put(self.marshal.to_bytes(event_name, payload))
