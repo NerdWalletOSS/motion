@@ -6,6 +6,7 @@ import boto3
 
 from kinesis.consumer import KinesisConsumer
 from kinesis.producer import KinesisProducer
+from kinesis.state import DynamoDB
 
 from .marshal import JSONMarshal, MarshalFailure
 from .worker import MotionConsumer, MotionWorker
@@ -21,7 +22,7 @@ class Motion(object):
         Motion._INSTANCES.append(inst)
         return inst
 
-    def __init__(self, stream_name, marshal=None, concurrency=None, boto3_session=None, kinesis_state=None):
+    def __init__(self, stream_name, marshal=None, concurrency=None, boto3_session=None, state_table_name=None):
         """Create a new motion application
 
         :param stream_name: the name of the kinesis stream to use
@@ -29,14 +30,17 @@ class Motion(object):
         :param concurrency: an integer specifying the number of workers to start, defaults to 1
         :param boto3_session: the boto3 Session object to use for our client, can also be a dict that will be passed to
                               the boto3 Session object as kwargs
+        :param state_table_name: the name of the DynamoDB table name used to store state in
         """
         if isinstance(boto3_session, dict):
             boto3_session = boto3.Session(**boto3_session)
         self.boto3_session = boto3_session
 
+        consumer_state = DynamoDB(state_table_name) if state_table_name else None
+
         self.stream_name = stream_name
         self.producer = KinesisProducer(stream_name, boto3_session=boto3_session)
-        self.consumer = KinesisConsumer(stream_name, boto3_session=boto3_session, state=kinesis_state)
+        self.consumer = KinesisConsumer(stream_name, boto3_session=boto3_session, state=consumer_state)
         self.marshal = marshal or JSONMarshal()
         self.concurrency = concurrency or 1
         self.responder_queue = multiprocessing.Queue()
