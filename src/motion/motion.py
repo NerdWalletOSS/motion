@@ -36,11 +36,11 @@ class Motion(object):
             boto3_session = boto3.Session(**boto3_session)
         self.boto3_session = boto3_session
 
-        consumer_state = DynamoDB(state_table_name) if state_table_name else None
+        consumer_state = DynamoDB(state_table_name, boto3_session=self.boto3_session) if state_table_name else None
 
         self.stream_name = stream_name
-        self.producer = KinesisProducer(stream_name, boto3_session=boto3_session)
-        self.consumer = KinesisConsumer(stream_name, boto3_session=boto3_session, state=consumer_state)
+        self.producer = KinesisProducer(stream_name, boto3_session=self.boto3_session)
+        self.consumer = KinesisConsumer(stream_name, boto3_session=self.boto3_session, state=consumer_state)
         self.marshal = marshal or JSONMarshal()
         self.concurrency = concurrency or 1
         self.responder_queue = multiprocessing.Queue()
