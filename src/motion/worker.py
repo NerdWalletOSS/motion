@@ -1,9 +1,10 @@
-import atexit
 import logging
-import Queue
-import multiprocessing
-import signal
 import sys
+
+try:
+    from queue import Empty
+except ImportError:
+    from Queue import Empty
 
 from offspring import Subprocess, SubprocessLoop
 
@@ -32,7 +33,7 @@ class MotionWorker(SubprocessLoop):
     def loop(self):
         try:
             event_name, payload = self.queue.get(block=True, timeout=0.25)
-        except Queue.Empty:
+        except Empty:
             return
         except Exception:
             log.exception("Failed to get event & payload from queue")
