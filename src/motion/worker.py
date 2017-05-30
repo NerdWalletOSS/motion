@@ -5,53 +5,17 @@ import multiprocessing
 import signal
 import sys
 
+from offspring import Subprocess, SubprocessLoop
+
 log = logging.getLogger(__name__)
 
 
-class MotionProcess(object):
-    """Base class for forked workers via multiprocessing.Process"""
-    def __init__(self):
-        self.process = None
-        self.alive = True
-
-        atexit.register(self.shutdown)
-        self.process = multiprocessing.Process(target=self._run)
-        self.process.start()
-
-    def shutdown(self):
-        if self.process:
-            log.info("%s shutting down", self.__class__.__name__)
-            self.process.terminate()
-            self.process.join()
-            self.process = None
-
-    def _signal_handler(self, signum, frame):
-        log.info("Caught signal %s", signum)
-        self.alive = False
-
-    def _run(self):
-        signal.signal(signal.SIGTERM, self._signal_handler)
-
-        log.info("%s starting", self.__class__.__name__)
-
-        while self.alive:
-            try:
-                self.work()
-            except Exception:
-                log.exception("Unhandled exception in base MotionProcess")
-                self.alive = False
-                return sys.exit(1)
-
-    def work(self):
-        raise NotImplementedError
-
-
-class MotionConsumer(MotionProcess):
+class MotionConsumer(Subprocess):
     def __init__(self, app):
         self.app = app
-        super(MotionConsumer, self).__init__()
+        self.start()
 
-    def work(self):
+    def run(self):
         self.app.consume()
 
         # we should never reach this
@@ -59,20 +23,16 @@ class MotionConsumer(MotionProcess):
         sys.exit(2)
 
 
-class MotionWorker(MotionProcess):
+class MotionWorker(SubprocessLoop):
     def __init__(self, queue, responders):
         self.queue = queue
         self.responders = responders
-        super(MotionWorker, self).__init__()
+        self.start()
 
-    def work(self):
+    def loop(self):
         try:
-            event_name, payload = self.queue.get(block=True, timeout=0.1)
+            event_name, payload = self.queue.get(block=True, timeout=0.25)
         except Queue.Empty:
-            return
-        except (SystemExit, KeyboardInterrupt):
-            log.error("Exiting via interrupt")
-            self.alive = False
             return
         except Exception:
             log.exception("Failed to get event & payload from queue")
@@ -88,4 +48,4 @@ class MotionWorker(MotionProcess):
 
         log.debug("Processed event %s with payload %s, got result %s", event_name, payload, result)
 
-        # XXX TODO: add result storage?
+        # XXX TODO: add result storage

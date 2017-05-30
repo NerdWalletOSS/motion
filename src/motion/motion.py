@@ -68,7 +68,7 @@ class Motion(object):
         for message in self.consumer:
             log.debug("Consumed message: %s", message)
             try:
-                event_name, payload = self.marshal.to_native(message)
+                event_name, payload = self.marshal.to_native(message['Data'])
             except MarshalFailure:
                 log.warn("Failed to marshal message to native objects, skipping")
                 continue
@@ -80,7 +80,7 @@ class Motion(object):
                 log.warn("No responder for event %s registered, skipping", event_name)
                 continue
 
-            self.responder_queue.put_nowait((event_name, payload))
+            self.responder_queue.put((event_name, payload))
 
     def dispatch(self, event_name, payload):
         self.producer.put(self.marshal.to_bytes(event_name, payload))
