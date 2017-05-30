@@ -21,7 +21,7 @@ class Motion(object):
         Motion._INSTANCES.append(inst)
         return inst
 
-    def __init__(self, stream_name, marshal=None, concurrency=None, boto3_session=None):
+    def __init__(self, stream_name, marshal=None, concurrency=None, boto3_session=None, kinesis_state=None):
         """Create a new motion application
 
         :param stream_name: the name of the kinesis stream to use
@@ -36,7 +36,7 @@ class Motion(object):
 
         self.stream_name = stream_name
         self.producer = KinesisProducer(stream_name, boto3_session=boto3_session)
-        self.consumer = KinesisConsumer(stream_name, boto3_session=boto3_session)
+        self.consumer = KinesisConsumer(stream_name, boto3_session=boto3_session, state=kinesis_state)
         self.marshal = marshal or JSONMarshal()
         self.concurrency = concurrency or 1
         self.responder_queue = multiprocessing.Queue()
