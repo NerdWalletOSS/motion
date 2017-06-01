@@ -14,6 +14,21 @@ from .worker import MotionConsumer, MotionWorker
 log = logging.getLogger(__name__)
 
 
+def cached_property(func):
+    attr = '_{0}'.format(func.__name__)
+
+    @property
+    def _cached_property(self):
+        try:
+            return getattr(self, attr)
+        except AttributeError:
+            res = func(self)
+            setattr(self, attr, res)
+            return res
+
+    return _cached_property
+
+
 class Motion(object):
     _INSTANCES = []
 
@@ -36,11 +51,8 @@ class Motion(object):
             boto3_session = boto3.Session(**boto3_session)
         self.boto3_session = boto3_session
 
-        consumer_state = DynamoDB(state_table_name, boto3_session=self.boto3_session) if state_table_name else None
-
         self.stream_name = stream_name
-        self.producer = KinesisProducer(stream_name, boto3_session=self.boto3_session)
-        self.consumer = KinesisConsumer(stream_name, boto3_session=self.boto3_session, state=consumer_state)
+        self.state_table_name = state_table_name
         self.marshal = marshal or JSONMarshal()
         self.concurrency = concurrency or 1
         self.responder_queue = multiprocessing.Queue()
@@ -52,6 +64,19 @@ class Motion(object):
 
     def __unicode__(self):
         return 'Motion on {0}'.format(self.stream_name)
+
+    @cached_property
+    def consumer_state(self):
+        if self.state_table_name:
+            return DynamoDB(self.state_table_name, boto3_session=self.boto3_session)
+
+    @cached_property
+    def producer(self):
+        return KinesisProducer(self.stream_name, boto3_session=self.boto3_session)
+
+    @cached_property
+    def consumer(self):
+        return KinesisConsumer(self.stream_name, boto3_session=self.boto3_session, state=self.consumer_state)
 
     def respond_to(self, event_name):
         def decorator(func):
