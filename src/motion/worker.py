@@ -32,7 +32,7 @@ class MotionWorker(SubprocessLoop):
 
     def loop(self):
         try:
-            event_name, payload, responder_index = self.queue.get(block=True, timeout=0.25)
+            event_name, responder_index, payload = self.queue.get(block=True, timeout=0.25)
         except Empty:
             return
         except Exception:

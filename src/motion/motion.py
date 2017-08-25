@@ -106,7 +106,7 @@ class Motion(object):
                 continue
 
             for index in xrange(len(self.responders[event_name])):
-                self.responder_queue.put((event_name, payload, index))
+                self.responder_queue.put((event_name, index, payload))
 
     def dispatch(self, event_name, payload):
         self.producer.put(self.marshal.to_bytes(event_name, payload))
