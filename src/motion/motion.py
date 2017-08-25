@@ -1,3 +1,4 @@
+import collections
 import functools
 import logging
 import multiprocessing
@@ -56,7 +57,7 @@ class Motion(object):
         self.marshal = marshal or JSONMarshal()
         self.concurrency = concurrency or 1
         self.responder_queue = multiprocessing.Queue()
-        self.responders = {}
+        self.responders = collections.defaultdict(list)
         self.workers = {}
 
     def __str__(self):
@@ -80,16 +81,11 @@ class Motion(object):
 
     def respond_to(self, event_name):
         def decorator(func):
-            assert event_name not in self.responders, "Event %s already registered to %s" % (
-                event_name,
-                self.responders[event_name]
-            )
-
             @functools.wraps(func)
             def wrapper(*args, **kwargs):
                 return func(*args, **kwargs)
 
-            self.responders[event_name] = wrapper
+            self.responders[event_name].append(wrapper)
             return wrapper
         return decorator
 
@@ -109,7 +105,8 @@ class Motion(object):
                 log.warn("No responder for event %s registered, skipping", event_name)
                 continue
 
-            self.responder_queue.put((event_name, payload))
+            for index in xrange(len(self.responders[event_name])):
+                self.responder_queue.put((event_name, payload, index))
 
     def dispatch(self, event_name, payload):
         self.producer.put(self.marshal.to_bytes(event_name, payload))

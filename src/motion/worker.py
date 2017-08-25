@@ -32,14 +32,14 @@ class MotionWorker(SubprocessLoop):
 
     def loop(self):
         try:
-            event_name, payload = self.queue.get(block=True, timeout=0.25)
+            event_name, payload, responder_index = self.queue.get(block=True, timeout=0.25)
         except Empty:
             return
         except Exception:
             log.exception("Failed to get event & payload from queue")
             return
 
-        responder = self.responders[event_name]
+        responder = self.responders[event_name][responder_index]
 
         try:
             result = responder(payload)
