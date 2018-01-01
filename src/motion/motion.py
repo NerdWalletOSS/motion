@@ -1,5 +1,4 @@
 import collections
-import functools
 import logging
 import multiprocessing
 
@@ -81,12 +80,8 @@ class Motion(object):
 
     def respond_to(self, event_name):
         def decorator(func):
-            @functools.wraps(func)
-            def wrapper(*args, **kwargs):
-                return func(*args, **kwargs)
-
-            self.responders[event_name].append(wrapper)
-            return wrapper
+            self.responders[event_name].append(func)
+            return func
         return decorator
 
     def consume(self):
