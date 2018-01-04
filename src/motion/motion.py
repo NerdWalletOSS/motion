@@ -1,4 +1,6 @@
 import collections
+import fnmatch
+import functools
 import logging
 import multiprocessing
 
@@ -18,6 +20,7 @@ def cached_property(func):
     attr = '_{0}'.format(func.__name__)
 
     @property
+    @functools.wraps(func)
     def _cached_property(self):
         try:
             return getattr(self, attr)
@@ -96,12 +99,11 @@ class Motion(object):
                 log.exception("Unhandled exception while marshaling message to native: %s", message)
                 continue
 
-            if event_name not in self.responders:
-                log.warn("No responder for event %s registered, skipping", event_name)
-                continue
-
-            for index in xrange(len(self.responders[event_name])):
-                self.responder_queue.put((event_name, index, payload))
+            for responder_pattern in self.responders:
+                if fnmatch.fnmatch(event_name, responder_pattern):
+                    log.debug("Matched responder pattern %s against event name %s", responder_pattern, event_name)
+                    for index in xrange(len(self.responders[responder_pattern])):
+                        self.responder_queue.put((event_name, index, payload))
 
     def dispatch(self, event_name, payload):
         self.producer.put(self.marshal.to_bytes(event_name, payload))
