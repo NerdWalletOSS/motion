@@ -1,5 +1,6 @@
 import collections
 import fnmatch
+import functools
 import logging
 import multiprocessing
 
