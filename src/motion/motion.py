@@ -83,7 +83,7 @@ class Motion(object):
 
     def respond_to(self, pattern, pass_event_name=False):
         def decorator(func):
-            self.responders[event_name].append(func)
+            self.responders[pattern].append(func)
             func._motion_pass_event_name = pass_event_name
             return func
         return decorator
