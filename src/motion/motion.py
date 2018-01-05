@@ -81,9 +81,10 @@ class Motion(object):
     def consumer(self):
         return KinesisConsumer(self.stream_name, boto3_session=self.boto3_session, state=self.consumer_state)
 
-    def respond_to(self, event_name):
+    def respond_to(self, pattern, pass_event_name=False):
         def decorator(func):
-            self.responders[event_name].append(func)
+            self.responders[pattern].append(func)
+            func._motion_pass_event_name = pass_event_name
             return func
         return decorator
 
@@ -103,7 +104,7 @@ class Motion(object):
                 if fnmatch.fnmatch(event_name, responder_pattern):
                     log.debug("Matched responder pattern %s against event name %s", responder_pattern, event_name)
                     for index in xrange(len(self.responders[responder_pattern])):
-                        self.responder_queue.put((event_name, index, payload))
+                        self.responder_queue.put((responder_pattern, index, event_name, payload))
 
     def dispatch(self, event_name, payload):
         self.producer.put(self.marshal.to_bytes(event_name, payload))

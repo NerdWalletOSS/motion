@@ -32,21 +32,26 @@ class MotionWorker(SubprocessLoop):
 
     def loop(self):
         try:
-            event_name, responder_index, payload = self.queue.get(block=True, timeout=0.25)
+            responder_pattern, responder_index, event_name, payload = self.queue.get(block=True, timeout=0.25)
         except Empty:
-            return
+            return 0
         except Exception:
-            log.exception("Failed to get event & payload from queue")
-            return
+            log.exception("Failed to get event payload from queue")
+            return 0
 
-        responder = self.responders[event_name][responder_index]
+        responder = self.responders[responder_pattern][responder_index]
 
         try:
-            result = responder(payload)
+            if responder._motion_pass_event_name:
+                result = responder(payload, event_name=event_name)
+            else:
+                result = responder(payload)
         except Exception:
             log.exception("Unhandled exception while processing payload for event %s", event_name)
-            return
+            return 0
 
         log.debug("Processed event %s with payload %s, got result %s", event_name, payload, result)
 
         # XXX TODO: add result storage
+
+        return 0
