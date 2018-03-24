@@ -13,21 +13,21 @@ class MarshalFailure(Exception):
 
 class JSONMarshal(object):
     """Simple JSON Marshal"""
-    JSON_DUMP_CLS = None
-    JSON_LOAD_CLS = None
+    JSONEncoder = None
+    JSONDecoder = None
     
     def to_bytes(self, event_name, payload):
         try:
             return json.dumps({
                 'event_name': event_name,
                 'payload': payload
-            }, cls=self.JSON_DUMP_CLS)
+            }, cls=self.JSONEncoder)
         except ValueError:
             raise MarshalFailure("Could not convert payload to JSON", payload)
 
     def to_native(self, payload):
         try:
-            native = json.loads(payload, cls=self.JSON_LOAD_CLS)
+            native = json.loads(payload, cls=self.JSONDecoder)
         except ValueError:
             raise MarshalFailure("Could not load valid JSON from payload", payload)
         return native['event_name'], native['payload']
