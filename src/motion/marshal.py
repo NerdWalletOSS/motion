@@ -15,7 +15,7 @@ class JSONMarshal(object):
     """Simple JSON Marshal"""
     JSONEncoder = None
     JSONDecoder = None
-    
+
     def to_bytes(self, event_name, payload):
         try:
             return json.dumps({
