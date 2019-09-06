@@ -5,7 +5,7 @@ with open('VERSION') as version_fd:
 
 install_requires = [
     'click>=6.6,<7.0',
-    'kinesis-python>=0.1.6,<1.0',
+    'kinesis-python>=0.2.0,<0.9',
     'offspring>=0.1.1,<1.0',
 ]
 
