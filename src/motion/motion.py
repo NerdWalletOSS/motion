@@ -1,3 +1,5 @@
+import collections
+import fnmatch
 import functools
 import logging
 import multiprocessing
@@ -18,6 +20,7 @@ def cached_property(func):
     attr = '_{0}'.format(func.__name__)
 
     @property
+    @functools.wraps(func)
     def _cached_property(self):
         try:
             return getattr(self, attr)
@@ -56,7 +59,7 @@ class Motion(object):
         self.marshal = marshal or JSONMarshal()
         self.concurrency = concurrency or 1
         self.responder_queue = multiprocessing.Queue()
-        self.responders = {}
+        self.responders = collections.defaultdict(list)
         self.workers = {}
 
     def __str__(self):
@@ -78,19 +81,11 @@ class Motion(object):
     def consumer(self):
         return KinesisConsumer(self.stream_name, boto3_session=self.boto3_session, state=self.consumer_state)
 
-    def respond_to(self, event_name):
+    def respond_to(self, pattern, pass_event_name=False):
         def decorator(func):
-            assert event_name not in self.responders, "Event %s already registered to %s" % (
-                event_name,
-                self.responders[event_name]
-            )
-
-            @functools.wraps(func)
-            def wrapper(*args, **kwargs):
-                return func(*args, **kwargs)
-
-            self.responders[event_name] = wrapper
-            return wrapper
+            self.responders[pattern].append(func)
+            func._motion_pass_event_name = pass_event_name
+            return func
         return decorator
 
     def consume(self):
@@ -105,11 +100,11 @@ class Motion(object):
                 log.exception("Unhandled exception while marshaling message to native: %s", message)
                 continue
 
-            if event_name not in self.responders:
-                log.warn("No responder for event %s registered, skipping", event_name)
-                continue
-
-            self.responder_queue.put((event_name, payload))
+            for responder_pattern in self.responders:
+                if fnmatch.fnmatch(event_name, responder_pattern):
+                    log.debug("Matched responder pattern %s against event name %s", responder_pattern, event_name)
+                    for index in xrange(len(self.responders[responder_pattern])):
+                        self.responder_queue.put((responder_pattern, index, event_name, payload))
 
     def dispatch(self, event_name, payload):
         self.producer.put(self.marshal.to_bytes(event_name, payload))
