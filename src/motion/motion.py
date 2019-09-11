@@ -35,8 +35,8 @@ def cached_property(func):
 class Motion(object):
     _INSTANCES = []
 
-    def __new__(cls, *args, **kwargs):
-        inst = super(Motion, cls).__new__(cls, *args, **kwargs)
+    def __new__(cls):
+        inst = super(Motion, cls).__new__(cls)
         Motion._INSTANCES.append(inst)
         return inst
 
