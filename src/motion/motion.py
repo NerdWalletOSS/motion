@@ -5,6 +5,7 @@ import logging
 import multiprocessing
 
 import boto3
+import six
 
 from kinesis.consumer import KinesisConsumer
 from kinesis.producer import KinesisProducer
@@ -35,8 +36,11 @@ def cached_property(func):
 class Motion(object):
     _INSTANCES = []
 
-    def __new__(cls):
-        inst = super(Motion, cls).__new__(cls)
+    def __new__(cls, *args, **kwargs):
+        if six.PY2:
+            inst = super(Motion, cls).__new__(cls, *args, **kwargs)
+        else:
+            inst = super(Motion, cls).__new__(cls)
         Motion._INSTANCES.append(inst)
         return inst
 
