@@ -24,6 +24,7 @@ setup(
     license='Apache 2',
     description='High-level library for dispatching and responding to tasks via AWS Kinesis',
     long_description=long_description,
+    long_description_content_type="text/markdown",
     entry_points={
         'console_scripts': [
             'motion = motion.cli:main'
