@@ -6,6 +6,7 @@ import multiprocessing
 
 import boto3
 import six
+import six.moves
 
 from kinesis.consumer import KinesisConsumer
 from kinesis.producer import KinesisProducer
@@ -33,6 +34,7 @@ def cached_property(func):
     return _cached_property
 
 
+@six.python_2_unicode_compatible
 class Motion(object):
     _INSTANCES = []
 
@@ -67,9 +69,6 @@ class Motion(object):
         self.workers = {}
 
     def __str__(self):
-        return unicode(self).encode('utf-8')
-
-    def __unicode__(self):
         return 'Motion on {0}'.format(self.stream_name)
 
     @cached_property
@@ -107,7 +106,7 @@ class Motion(object):
             for responder_pattern in self.responders:
                 if fnmatch.fnmatch(event_name, responder_pattern):
                     log.debug("Matched responder pattern %s against event name %s", responder_pattern, event_name)
-                    for index in xrange(len(self.responders[responder_pattern])):
+                    for index in six.moves.range(len(self.responders[responder_pattern])):
                         self.responder_queue.put((responder_pattern, index, event_name, payload))
 
     def dispatch(self, event_name, payload):
