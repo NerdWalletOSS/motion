@@ -132,7 +132,7 @@ class Motion(object):
         start_if_not_alive("consumer", lambda: MotionConsumer(self))
 
         log.debug("Checking %s task workers", self)
-        for idx in xrange(self.concurrency):
+        for idx in six.moves.range(self.concurrency):
             start_if_not_alive(
                 # for humans, we make our index 1 based
                 'worker %d' % (idx + 1),
