@@ -13,11 +13,12 @@ python:
 
 install: false
 script:
+  - pip install -r requirements.txt
   - pip install -e .
   - pip install codecov pytest pytest-mock
-    # - coverage run --source=src $(which py.test) test/
+  - coverage run --source=src $(which py.test) test/
 after_success:
-    # - bash <(curl -s https://codecov.io/bash)
+  - bash <(curl -s https://codecov.io/bash)
 
 deploy:
   provider: pypi
