@@ -1,5 +1,10 @@
 # Motion
 
+![Build Status](https://img.shields.io/travis/NerdWalletOSS/motion.svg)
+![CodeCov](https://img.shields.io/codecov/c/github/NerdWalletOSS/motion.svg)
+![PyPI - Version](https://img.shields.io/pypi/v/motion.svg)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/motion.svg)
+
 Motion is a high-level task dispatch & response framework for Amazon Kinesis. It is built on top of the low-level
 kinesis-python library and inspired by the task definition of Celery.
 

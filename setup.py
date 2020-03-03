@@ -29,5 +29,19 @@ setup(
         'console_scripts': [
             'motion = motion.cli:main'
         ]
-    }
+    },
+    classifiers=[
+        "Development Status :: 4 - Beta",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3.5",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: Apache Software License",
+        "Natural Language :: English",
+        "Programming Language :: Python",
+        "Topic :: Internet",
+        "Topic :: Software Development :: Libraries",
+    ],
 )
