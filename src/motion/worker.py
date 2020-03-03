@@ -30,6 +30,12 @@ class MotionWorker(SubprocessLoop):
         self.responders = responders
         self.start()
 
+    def respond(self, responder, event_name, payload):
+        if responder._motion_pass_event_name:
+            return responder(payload, event_name=event_name)
+
+        return responder(payload)
+
     def loop(self):
         try:
             responder_pattern, responder_index, event_name, payload = self.queue.get(block=True, timeout=0.25)
@@ -42,10 +48,7 @@ class MotionWorker(SubprocessLoop):
         responder = self.responders[responder_pattern][responder_index]
 
         try:
-            if responder._motion_pass_event_name:
-                result = responder(payload, event_name=event_name)
-            else:
-                result = responder(payload)
+            result = self.respond(responder, event_name, payload)
         except Exception:
             log.exception("Unhandled exception while processing payload for event %s", event_name)
             return 0
