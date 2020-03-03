@@ -10,8 +10,9 @@ python:
   - 3.5
   - 3.6
   - 3.7
+  - 3.8
 
-install: false
+install: skip
 script:
   - pip install -r requirements.txt
   - pip install -e .
@@ -27,5 +28,5 @@ deploy:
     secure: "UV/Ua3GI2fQR1sik4I/MrU1o3fx2uoDuHRZ3P6ckLf16dHgQTtmEC6IO6VQl6UwwoqV99t5NWvw6yeAJ1zMRxiT4arnC7xsCdkFRgNsAbMnZBGjfo24O1r+CHvNOfXpWOWssgNWcjBpC3j9ZzPPQFSL90BX6Xmnvo6cApbKsACbkp5+8WD7vB87m0ZP4RvRUKq5gUFQUFjfTVt0MVcyP+bn/Q8e9cyLE4uCxp0M9IGGPe50JxAO08iNJl0AcW9Yeg2urwfjBxfkewAvWc/yPeLTIOjxtejwPvVBs4TLPljUREo/rkTpMk/YMW7UER/R+5EuBfoGKGJ61VLdbA/00zsbX/5PTcvY2lRUX8Hnx8deU0Y0p2MMILhPI2U2mZXPE4FNs3oZkbWRnjsJJbkbY4fq2PUflAhOsaxNlW/uFKWQyGaRuw5/qEA0PDyEF9AGB8y50LDlNX3coMkC+LT2gZHT7KR5do+BSSJvJOKKZz41mDQtCDqb3sef50UZBTgcyQkTF45AMfNANBwoIdxRD+dg/4ISEbzxDQYDj90nUgANGcmDi0hcGGEyxXddYegzDw640+NJDtFhE6zp7Y56SZBMU+Gbz3f+DDLb0ba2pPcI/Rqpg1Fg8qyFXoa/Cm3cGAFQSF1S5Gik1RYpDwVXuM7kDaIrDZAMO3l7d8t92IM0="
   on:
     branch: master
-    python: 3.7
+    python: 3.8
   distributions: "sdist bdist_wheel"

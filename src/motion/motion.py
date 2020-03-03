@@ -46,7 +46,7 @@ class Motion(object):
         Motion._INSTANCES.append(inst)
         return inst
 
-    def __init__(self, stream_name, marshal=None, concurrency=None, boto3_session=None, state_table_name=None):
+    def __init__(self, stream_name, marshal=None, concurrency=None, boto3_session=None, state_table_name=None, worker_class=None):
         """Create a new motion application
 
         :param stream_name: the name of the kinesis stream to use
@@ -55,6 +55,7 @@ class Motion(object):
         :param boto3_session: the boto3 Session object to use for our client, can also be a dict that will be passed to
                               the boto3 Session object as kwargs
         :param state_table_name: the name of the DynamoDB table name used to store state in
+        :param worker_class: The class to use for workers, defaults to MotionWorker
         """
         if isinstance(boto3_session, dict):
             boto3_session = boto3.Session(**boto3_session)
@@ -66,6 +67,7 @@ class Motion(object):
         self.concurrency = concurrency or 1
         self.responder_queue = multiprocessing.Queue()
         self.responders = collections.defaultdict(list)
+        self.worker_class = worker_class or MotionWorker
         self.workers = {}
 
     def __str__(self):
@@ -136,5 +138,5 @@ class Motion(object):
             start_if_not_alive(
                 # for humans, we make our index 1 based
                 'worker %d' % (idx + 1),
-                lambda: MotionWorker(self.responder_queue, self.responders)
+                lambda: self.worker_class(self.responder_queue, self.responders)
             )
