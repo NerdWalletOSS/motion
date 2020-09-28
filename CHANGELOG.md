@@ -1,3 +1,8 @@
+# 0.2.0
+
+* Drop support for Python 2.7
+* Loosen click requirement
+
 # 0.1.5
 
 * Allow worker respond function to be customized in a subclass

@@ -6,15 +6,12 @@ branches:
     - master
 
 python:
-  - 2.7
-  - 3.5
   - 3.6
   - 3.7
   - 3.8
 
 install: skip
 script:
-  - pip install -r requirements.txt
   - pip install -e .
   - pip install codecov pytest pytest-mock
   - coverage run --source=src $(which py.test) test/

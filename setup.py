@@ -7,7 +7,7 @@ with open('README.md') as readme_fd:
     long_description = readme_fd.read()
 
 install_requires = [
-    'click>=6.6,<7.0',
+    'click>=6.6',
     'kinesis-python>=0.2.1,<0.9',
     'offspring>=0.1.1,<1.0',
     'six>=1.12.0,<2.0'
@@ -32,8 +32,6 @@ setup(
     },
     classifiers=[
         "Development Status :: 4 - Beta",
-        "Programming Language :: Python :: 2.7",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
